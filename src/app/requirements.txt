@@ -1,0 +1,42 @@
+annotated-types @ file:///work/perseverance-python-buildout/croot/annotated-types_1728386958747/work
+anyio @ file:///io/perseverance-python-buildout/croot/anyio_1731700736723/work
+certifi==2025.1.31
+click==8.1.8
+dnspython==2.7.0
+email_validator==2.2.0
+fastapi @ file:///io/buildout/croot/fastapi_1735845387481/work
+fastapi-cli==0.0.7
+greenlet==3.1.1
+h11==0.14.0
+httpcore==1.0.7
+httptools==0.6.4
+httpx==0.28.1
+idna @ file:///work/perseverance-python-buildout/croot/idna_1728385935861/work
+Jinja2==3.1.5
+markdown-it-py==3.0.0
+MarkupSafe==3.0.2
+mdurl==0.1.2
+pydan==7.3
+pydantic @ file:///croot/pydantic_1734736067156/work
+pydantic-settings==2.7.1
+pydantic_core @ file:///croot/pydantic-core_1734726052986/work
+Pygments==2.19.1
+python-dotenv==1.0.1
+python-multipart==0.0.20
+PyYAML==6.0.2
+rich==13.9.4
+rich-toolkit==0.13.2
+setuptools==75.8.0
+shellingham==1.5.4
+sniffio @ file:///work/perseverance-python-buildout/croot/sniffio_1728386342155/work
+SQLAlchemy==2.0.38
+sqlmodel==0.0.22
+starlette @ file:///io/perseverance-python-buildout/croot/starlette-recipe_1731704598518/work
+typer==0.15.1
+typing==3.7.4.3
+typing_extensions @ file:///croot/typing_extensions_1734714854207/work
+uvicorn==0.34.0
+uvloop==0.21.0
+watchfiles==1.0.4
+websockets==14.2
+wheel==0.44.0
