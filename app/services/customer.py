@@ -13,7 +13,6 @@ class CustomerService:
         return db_customer
 
     def update_customer(session: Session, customer: CustomerRequest):
-        return session.exec(select(Customer)).all()
         session.add(customer)
 
     def get_customer(session: Session, customer_id): 
@@ -28,7 +27,6 @@ class CustomerService:
     def get_customer_by_email(session: Session, email: str) -> Customer: 
         statement = select(Customer).where(Customer.email == email)
         result = session.exec(statement).first()
-        print("oii", result)
         return result
     
 
