@@ -2,7 +2,7 @@ services:
   db: 
     image: docker.io/postgres:15-alpine
     volumes: 
-      - user_db:/var/lib/postgresql/data/pgdata
+      - customer-db:/var/lib/postgresql/data/pgdata
     env_file: 
       - .env
     ports:
@@ -15,10 +15,26 @@ services:
     networks: 
       - tcc-network
 
+  prestart:
+      build:
+        context: .
+      networks:
+        - tcc-network
+      depends_on:
+        - db
+      command: bash scripts/prestart.sh
+      env_file:
+        - .env
+      environment:
+        - POSTGRES_SERVER=db
+        - POSTGRES_PORT=${POSTGRES_PORT}
+        - POSTGRES_DB=${POSTGRES_DB}
+        - POSTGRES_USER=${POSTGRES_USER?Variable not set}
+        - POSTGRES_PASSWORD=${POSTGRES_PASSWORD?Variable not set}
+
   backend: 
-    build: ./src
-    volumes:
-      - ./src:/app
+    build:
+      context: .
     ports: 
       - 8000:8000
     networks:
@@ -26,7 +42,7 @@ services:
     depends_on: 
       - db
     env_file: 
-      - .env
+      - .env  
     environment:
       - POSTGRES_SERVER=db
       - POSTGRES_PORT=${POSTGRES_PORT}
