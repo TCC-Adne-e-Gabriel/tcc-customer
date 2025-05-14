@@ -1,6 +1,7 @@
 from app.models.customer import Customer
-from app.schemas.customer import CustomerRequest, CustomerResponse
+from app.schemas.customer import CustomerRequest, CustomerResponse, CustomerChangePassword
 from sqlmodel import Session, select
+from uuid import UUID
 
 class CustomerService:
     @staticmethod
@@ -12,22 +13,45 @@ class CustomerService:
         session.refresh(db_customer)
         return db_customer
 
-    def update_customer(session: Session, customer: CustomerRequest):
-        session.add(customer)
+    @staticmethod
+    def update_customer(session: Session, customer: CustomerRequest, current_customer: Customer):
+        customer_db = customer.model_dump()
+        current_customer.sqlmodel_update(customer_db)
+        session.add(current_customer)
+        session.commit()
+        session.refresh(current_customer)
+        return current_customer
 
-    def get_customer(session: Session, customer_id): 
+    @staticmethod
+    def get_customer(session: Session, customer_id: UUID) -> Customer: 
         statement = select(Customer).where(Customer.id == customer_id)
         return session.exec(statement).first()
 
-    def check_password(session: Session, password: str, customer_id: str): 
+    @staticmethod
+    def check_password(session: Session, password: str, customer_id: UUID): 
         statement = select(Customer.password).where(Customer.id == customer_id)
         result = session.exec(statement).first()
         return result == password
     
+    @staticmethod
+    def update_password(session: Session, password: str, current_customer: Customer): 
+        customer_db = CustomerChangePassword(password=password).model_dump()
+        current_customer.sqlmodel_update(customer_db)
+        session.add(current_customer)
+        session.commit()
+        session.refresh(current_customer)
+        return current_customer
+    
+    @staticmethod
     def get_customer_by_email(session: Session, email: str) -> Customer: 
         statement = select(Customer).where(Customer.email == email)
         result = session.exec(statement).first()
         return result
+    
+    @staticmethod
+    def delete_customer(session: Session, current_customer: Customer): 
+        session.delete(current_customer)
+        session.commit()
     
 
 
