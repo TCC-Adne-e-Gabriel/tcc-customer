@@ -21,8 +21,6 @@ address_service = AddressService()
 def read_customer_by_id(
     id: UUID, 
     session: SessionDep, 
-    skip: int = 0, 
-    limit: int = 100
 ) : 
     customer = customer_service.get_customer(session=session, customer_id=id)
     if(not customer): 
@@ -102,7 +100,7 @@ def update_password(
 
 
 @router.get("/{id}/address/", response_model=List[AddressResponse])
-def read_customer_by_id(
+def read_customer_adresses(
     id: UUID, 
     session: SessionDep, 
 ) : 
@@ -111,7 +109,7 @@ def read_customer_by_id(
 
 
 @router.get("/address/{address_id}", response_model=AddressResponse)
-def read_customer_by_id(
+def read_address_by_id(
     address_id: UUID, 
     session: SessionDep, 
 ) : 
@@ -120,7 +118,7 @@ def read_customer_by_id(
 
 
 @router.post("/{id}/address/", response_model=AddressResponse)
-def read_customer_by_id(
+def read_addresses(
     id: UUID, 
     address_request: AddressRequest,
     session: SessionDep, 

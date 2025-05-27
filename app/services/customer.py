@@ -15,7 +15,8 @@ class CustomerService:
 
     @staticmethod
     def update_customer(session: Session, customer: CustomerRequest, current_customer: Customer):
-        customer_db = customer.model_dump()
+        customer_db = customer.model_dump(exclude_none=True)
+        print(customer_db)
         current_customer.sqlmodel_update(customer_db)
         session.add(current_customer)
         session.commit()

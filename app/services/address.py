@@ -18,7 +18,7 @@ class AddressService():
 
     @staticmethod
     def update_address(session: Session, address: AddressUpdatedRequest, current_address: Address):
-        address_db = address.model_dump()
+        address_db = address.model_dump(exclude_none=True)
         current_address.sqlmodel_update(address_db)
         session.add(current_address)
         session.commit()
