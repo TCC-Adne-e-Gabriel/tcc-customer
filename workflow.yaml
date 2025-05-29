@@ -18,5 +18,4 @@ jobs:
       - name: SonarCloud Scan
         uses: SonarSource/sonarcloud-github-action@master
         env:
-          GITHUB_TOKEN: ${{ GITHUB_TOKEN }} 
           SONAR_TOKEN: ${{ SONAR_TOKEN }}    
