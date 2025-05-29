@@ -1,7 +1,7 @@
 name: scan
 on:
   push:
-    branches: [ main]
+    branches: [ main ]
   pull_request:
     types: [opened, synchronize, reopened]
   workflow_dispatch:
@@ -18,4 +18,4 @@ jobs:
       - name: SonarQube Scan
         uses: SonarSource/sonarqube-scan-action@v5
         env:
-          SONAR_TOKEN: ${{ SONAR_TOKEN }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
