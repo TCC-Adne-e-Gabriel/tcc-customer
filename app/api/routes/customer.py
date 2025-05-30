@@ -1,15 +1,10 @@
 from fastapi import FastAPI
 from fastapi import APIRouter, HTTPException, Depends
-from ...deps import SessionDep
 from typing import List
-from app.schemas.address import AddressResponse, AddressRequest, AddressUpdatedRequest
 from app.services.customer import CustomerService
-from app.schemas.customer import CustomerRequest, CustomerResponse, PasswordRequest, CustomerUpdateRequest
-from app.deps import SessionDep
 from uuid import UUID, uuid4
-from app.services.address import AddressService
-from app.schemas.customer import Message
-from core.db import get_db_conn
+# from app.services.address import AddressService
+from app.core.db import get_db_conn
 from typing import Any
 from datetime import datetime
 
@@ -17,7 +12,7 @@ from datetime import datetime
 app = FastAPI()
 router = APIRouter(prefix="/customer")
 customer_service = CustomerService()
-address_service = AddressService()
+# address_service = AddressService()
 
 
 router = APIRouter()
