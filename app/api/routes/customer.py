@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-from fastapi import APIRouter, HTTPException, Depends
+from fastapi import APIRouter, HTTPException, Depends, Request
 from typing import List
 from app.services.customer import CustomerService
 from uuid import UUID, uuid4
@@ -14,14 +14,11 @@ router = APIRouter(prefix="/customer")
 customer_service = CustomerService()
 # address_service = AddressService()
 
-
-router = APIRouter()
-
 @router.get("/{id}")
 def get_customer_by_id(id, conn=Depends(get_db_conn)) -> Any:
     cursor = conn.cursor()
-    cursor.execute(f"SELECT * FROM customer WHERE customer.id = {id}")
-    customer = cursor.fetchall()
+    cursor.execute("SELECT * FROM customer WHERE customer.id = %s", (id,))
+    customer = cursor.fetchone()    
     cursor.close()
     return {"customer": customer}
 
@@ -29,11 +26,48 @@ def get_customer_by_id(id, conn=Depends(get_db_conn)) -> Any:
 @router.get("/address/{id}")
 def get_address_by_id(id, conn=Depends(get_db_conn)) -> Any:
     cursor = conn.cursor()
-    cursor.execute(f"SELECT * FROM address WHERE address.id = {id}")
+    cursor.execute("SELECT * FROM address WHERE address.id = %s", (id,))
     address = cursor.fetchall()
     cursor.close()
     return {"address": address}
 
+
+@router.post("/{id}/address/")
+async def create_address(
+    id: UUID,
+    body: Request,
+    conn=Depends(get_db_conn)
+) -> Any: 
+
+    body = await body.json()
+    cursor = conn.cursor()
+    address_id = uuid4()
+    date_now = datetime.now()
+
+    query = """
+        INSERT INTO address (id, created_at, updated_at, state, city, complement, neighborhood, address_id, customer_id)
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s);
+    """
+    values = (
+        address_id,
+        date_now,
+        date_now,
+        body["state"],
+        body["city"],
+        body.get("complement"),
+        body["neighborhood"],
+        address_id,
+        id
+    )
+            
+    body["address_id"] = address_id
+    body["created_at"] = date_now
+    body["updated_at"] = date_now
+    body["customer_id"] = id
+    cursor.execute(query, values)
+    conn.commit()
+    cursor.close()
+    return body
 
 @router.get("/{id}/address")
 def read_customer_adresses(id, conn=Depends(get_db_conn)) -> Any:
@@ -44,13 +78,15 @@ def read_customer_adresses(id, conn=Depends(get_db_conn)) -> Any:
     return {"addresses": addresses}
 
 @router.post("/")
-def create_customer(body, conn=Depends(get_db_conn)) -> Any:
+async def create_customer(body: Request, conn=Depends(get_db_conn)) -> Any:
+    body = await body.json()
     cursor = conn.cursor()
     customer_id = uuid4()
     date_now = datetime.now()
     cursor.execute(
-        "INSERT INTO CUSTOMER (id, name, email, password, phone, created_at, updated_at) VALUES"
-        f"({customer_id, body.name, body.email, body.password, body.phone, date_now, date_now})")
+        "INSERT INTO CUSTOMER (id, name, email, password, phone, created_at, updated_at) VALUES (%s, %s, %s, %s, %s, %s, %s)",
+        (str(customer_id), body["name"], body["email"], body["password"], body["phone"], date_now, date_now)
+    )
     conn.commit()
     cursor.close()
     body["id"] = customer_id
@@ -192,4 +228,4 @@ def update_password(
 
     customer = customer_service.get_customer(conn, id)
     customer_service.update_password(conn, password_request.new_password, id) 
-    return Message(message="Password updated successfully")
+    return { "message": "Password updated successfully"}
