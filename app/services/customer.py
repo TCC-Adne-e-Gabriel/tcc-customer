@@ -20,9 +20,15 @@ class CustomerService():
     #     session.refresh(current_customer)
     #     return current_customer
 
-    # def get_customer(self, session: Session, customer_id: UUID) -> Customer: 
-    #     statement = select(Customer).where(Customer.id == customer_id)
-    #     return session.exec(statement).first()
+    def get_customer(self, conn, customer_id): 
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM customer WHERE customer.id = %s", (customer_id,))
+        customer = cursor.fetchone()    
+        cursor.close()
+        return customer
+
+        statement = select(Customer).where(Customer.id == customer_id)
+        return session.exec(statement).first()
 
     # def check_password(self, session: Session, password: str, customer_id: UUID): 
     #     statement = select(Customer.password).where(Customer.id == customer_id)
@@ -31,8 +37,8 @@ class CustomerService():
     
     def update_password(self, conn, password, id): 
         cursor = conn.cursor()
-        query = f"UPDATE customer SET password = {password} WHERE id = {id} RETURNING id, name, email, phone, created_at, updated_at"
-        cursor.execute(query)
+        query = "UPDATE customer SET password = %s WHERE id = %s RETURNING id, name, email, phone, created_at, updated_at"
+        cursor.execute(query, (password, id))
         current_customer = cursor.fetchone()
         conn.commit()
         return current_customer

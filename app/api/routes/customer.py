@@ -3,18 +3,20 @@ from fastapi import APIRouter, HTTPException, Depends, Request
 from typing import List
 from app.services.customer import CustomerService
 from uuid import UUID, uuid4
+from app.core.encrypt import encrypt_data
 # from app.services.address import AddressService
 from app.core.db import get_db_conn
 from typing import Any
 from datetime import datetime
 
-
 app = FastAPI()
 router = APIRouter(prefix="/customer")
 customer_service = CustomerService()
 # address_service = AddressService()
+TOKEN = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ1c2VySGFyZGNvZGVkIiwibmFtZSI6IkFsZ3VucyIsInJvbGUiOiJVc2VyIn0.issoehumasegredoinseguro"
 
-@router.get("/{id}")
+
+@router.get("/{id}/")
 def get_customer_by_id(id, conn=Depends(get_db_conn)) -> Any:
     cursor = conn.cursor()
     cursor.execute("SELECT * FROM customer WHERE customer.id = %s", (id,))
@@ -32,7 +34,7 @@ def get_address_by_id(id, conn=Depends(get_db_conn)) -> Any:
     return {"address": address}
 
 
-@router.post("/{id}/address/")
+@router.post("/{id}/address/", status_code=201)
 async def create_address(
     id: UUID,
     body: Request,
@@ -45,19 +47,18 @@ async def create_address(
     date_now = datetime.now()
 
     query = """
-        INSERT INTO address (id, created_at, updated_at, state, city, complement, neighborhood, address_id, customer_id)
-        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s);
+        INSERT INTO address (id, created_at, updated_at, state, city, complement, neighborhood, customer_id)
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s);
     """
     values = (
-        address_id,
+        str(address_id),
         date_now,
         date_now,
         body["state"],
         body["city"],
         body.get("complement"),
         body["neighborhood"],
-        address_id,
-        id
+        str(id)
     )
             
     body["address_id"] = address_id
@@ -69,15 +70,16 @@ async def create_address(
     cursor.close()
     return body
 
-@router.get("/{id}/address")
+@router.get("/{id}/address/")
 def read_customer_adresses(id, conn=Depends(get_db_conn)) -> Any:
     cursor = conn.cursor()
-    cursor.execute(f"SELECT a.* FROM address a join customer c on a.customer_id = c.customer_id WHERE c.customer_id = {id};")
+    cursor.execute("SELECT a.* FROM address a join customer c on a.customer_id = c.id WHERE c.id = (%s)", (id, ))
     addresses = cursor.fetchall()
     cursor.close()
     return {"addresses": addresses}
 
-@router.post("/")
+
+@router.post("/", status_code=201)
 async def create_customer(body: Request, conn=Depends(get_db_conn)) -> Any:
     body = await body.json()
     cursor = conn.cursor()
@@ -85,7 +87,7 @@ async def create_customer(body: Request, conn=Depends(get_db_conn)) -> Any:
     date_now = datetime.now()
     cursor.execute(
         "INSERT INTO CUSTOMER (id, name, email, password, phone, created_at, updated_at) VALUES (%s, %s, %s, %s, %s, %s, %s)",
-        (str(customer_id), body["name"], body["email"], body["password"], body["phone"], date_now, date_now)
+        (str(customer_id), body["name"], body["email"], encrypt_data(body["password"]), body["phone"], date_now, date_now)
     )
     conn.commit()
     cursor.close()
@@ -95,7 +97,7 @@ async def create_customer(body: Request, conn=Depends(get_db_conn)) -> Any:
     return body
 
 
-@router.delete("/{id}")
+@router.delete("/{id}/")
 def delete_customer(id, conn=Depends(get_db_conn)) -> Any:
     cursor = conn.cursor()
 
@@ -110,11 +112,11 @@ def delete_customer(id, conn=Depends(get_db_conn)) -> Any:
     return {"message": "Customer deleted successfully"}
 
 
-@router.delete("/address/{id}")
+@router.delete("/address/{id}/")
 def delete_address(id, conn=Depends(get_db_conn)) -> Any:
     cursor = conn.cursor()
 
-    cursor.execute(f"DELETE FROM address WHERE id = {id}")
+    cursor.execute("DELETE FROM address WHERE id = (%s)", (str(id),))
     conn.commit()
 
     if cursor.rowcount == 0:
@@ -125,32 +127,31 @@ def delete_address(id, conn=Depends(get_db_conn)) -> Any:
     return {"message": "Address deleted successfully"}
 
 
-@router.patch("/{id}")
-def update_customer(id, customer, conn=Depends(get_db_conn)):
+@router.patch("/{id}/")
+async def update_customer(id, customer: Request, conn=Depends(get_db_conn)):
     cursor = conn.cursor()
-
+    customer = await customer.json()
     fields = []
     values = []
 
-    if customer.name is not None:
+    if customer.get("name"):
         fields.append("name = %s")
-        values.append(customer.name)
+        values.append(customer["name"])
 
-    if customer.email is not None:
+    if customer.get("email"):
         fields.append("email = %s")
-        values.append(customer.email)
+        values.append(customer["email"])
 
-    if customer.phone is not None:
+    if customer.get("phone"):
         fields.append("phone = %s")
-        values.append(customer.phone)
+        values.append(customer["phone"])
 
     if not fields:
         raise HTTPException(status_code=400, detail="No fields to update")
 
-    values.append(id)   
+    values.append(str(id))   
 
-    query = f"UPDATE customer SET {', '.join(fields)} WHERE id = {id}"
-
+    query = f"UPDATE customer SET {', '.join(fields)} WHERE id = %s"
     cursor.execute(query, values)
     conn.commit()
 
@@ -162,36 +163,53 @@ def update_customer(id, customer, conn=Depends(get_db_conn)):
     return {"message": "Customer updated successfully"}
 
 
-@router.patch("/address/{id}")
-def update_address(id, address, conn=Depends(get_db_conn)):
+@router.post("/login/")
+async def login(customer_request: Request, conn=Depends(get_db_conn)):
+    customer_request = await customer_request.json()
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM customer WHERE customer.email = %s", (customer_request["username"],))
+    customer = cursor.fetchone()    
+    cursor.close()
+    stored_password_hash = customer[6]
+    
+    provided_password_hash = encrypt_data(customer_request["password"])
+    if (not stored_password_hash) or (provided_password_hash != stored_password_hash): 
+        raise HTTPException(status_code=401, detail="Credenciais inválidas")
+    
+    return {"access_token": TOKEN, "token_type": "bearer"}
+        
+
+@router.patch("/address/{id}/")
+async def update_address(id, address: Request, conn=Depends(get_db_conn)):
+    address = await address.json()
     cursor = conn.cursor()
 
     fields = []
     values = []
 
-    if address.state is not None:
+    if address.get("state"):
         fields.append("state = %s")
-        values.append(address.state)
+        values.append(address["state"])
 
-    if address.city is not None:
+    if address.get("city"):
         fields.append("city = %s")
-        values.append(address.city)
+        values.append(address["city"])
 
-    if address.complement is not None:
+    if address.get("complement"):
         fields.append("complement = %s")
-        values.append(address.complement)
+        values.append(address["complement"])
 
-    if address.neighborhood is not None:
+    if address.get("neighborhood"):
         fields.append("neighborhood = %s")
-        values.append(address.neighborhood)
+        values.append(address["neighborhood"])
 
 
     if not fields:
         raise HTTPException(status_code=400, detail="No fields to update")
 
-    values.append(id)   
+    values.append(str(id))   
 
-    query = f"UPDATE address SET {', '.join(fields)} WHERE id = {id}"
+    query = f"UPDATE address SET {', '.join(fields)} WHERE id = %s"
 
     cursor.execute(query, values)
     conn.commit()
@@ -205,27 +223,29 @@ def update_address(id, address, conn=Depends(get_db_conn)):
 
 
 @router.patch("/password/{id}")
-def update_password(
+async def update_password(
     id,
-    password_request,
+    password_request: Request,
     conn=Depends(get_db_conn),     
 ):
+    password_request = await password_request.json()
     cursor = conn.cursor()
-    cursor.execute(f"SELECT * FROM customer WHERE customer.id = {id}")
-    customer = cursor.fetchall()
+    cursor.execute("SELECT * FROM customer WHERE customer.id = (%s)", (str(id), ))
+    customer = cursor.fetchone()
+    print(customer)
     cursor.close()
-    if(customer.password != password_request.current_password):
+    password_hashed = encrypt_data(password_request["new_password"])
+    if(customer[6] != encrypt_data(password_request["current_password"])):
         raise HTTPException(
             status_code=400, 
             detail="Incorrect Password"
         )
     
-    if(customer.password != password_request.new_password):
+    if(customer[6] == password_hashed):
         raise HTTPException(
             status_code=400, 
             detail="New password cannot be the same"
         )
 
-    customer = customer_service.get_customer(conn, id)
-    customer_service.update_password(conn, password_request.new_password, id) 
+    customer_service.update_password(conn, password_hashed, id) 
     return { "message": "Password updated successfully"}
