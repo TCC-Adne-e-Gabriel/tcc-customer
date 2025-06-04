@@ -4,7 +4,6 @@ from typing import List
 from app.services.customer import CustomerService
 from uuid import UUID, uuid4
 from app.core.encrypt import encrypt_data
-# from app.services.address import AddressService
 from app.core.db import get_db_conn
 from typing import Any
 from datetime import datetime
@@ -12,8 +11,7 @@ from datetime import datetime
 app = FastAPI()
 router = APIRouter(prefix="/customer")
 customer_service = CustomerService()
-# address_service = AddressService()
-TOKEN = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ1c2VySGFyZGNvZGVkIiwibmFtZSI6IkFsZ3VucyIsInJvbGUiOiJVc2VyIn0.issoehumasegredoinseguro"
+TOKEN = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ1c2VySGFyZGNvZGVkIiwibmFtZSI6IkFsZ3VucyIsInJvbGUiOiJVc2VyIn0"
 
 
 @router.get("/{id}/")
@@ -36,12 +34,13 @@ def get_address_by_id(id, conn=Depends(get_db_conn)) -> Any:
 
 @router.post("/{id}/address/", status_code=201)
 async def create_address(
-    id: UUID,
-    body: Request,
+    id,
+    request: Request,
     conn=Depends(get_db_conn)
 ) -> Any: 
-
-    body = await body.json()
+    body = await request.json()
+    print("aquiiiiii ", body)
+    print("id ", id)
     cursor = conn.cursor()
     address_id = uuid4()
     date_now = datetime.now()
