@@ -17,7 +17,7 @@ TOKEN = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ1c2VySGFyZGNvZGVkIiwibm
 @router.get("/{id}/")
 def get_customer_by_id(id, conn=Depends(get_db_conn)) -> Any:
     cursor = conn.cursor()
-    cursor.execute("SELECT * FROM customer WHERE customer.id = %s", (id,))
+    cursor.execute("SELECT * FROM customer WHERE customer.id = '"+ id + "'")
     customer = cursor.fetchone()    
     cursor.close()
     return {"customer": customer}
@@ -26,7 +26,7 @@ def get_customer_by_id(id, conn=Depends(get_db_conn)) -> Any:
 @router.get("/address/{id}")
 def get_address_by_id(id, conn=Depends(get_db_conn)) -> Any:
     cursor = conn.cursor()
-    cursor.execute("SELECT * FROM address WHERE address.id = %s", (id,))
+    cursor.execute("SELECT * FROM address WHERE address.id = '" + id + "'")
     address = cursor.fetchall()
     cursor.close()
     return {"address": address}
@@ -72,7 +72,7 @@ async def create_address(
 @router.get("/{id}/address/")
 def read_customer_adresses(id, conn=Depends(get_db_conn)) -> Any:
     cursor = conn.cursor()
-    cursor.execute("SELECT a.* FROM address a join customer c on a.customer_id = c.id WHERE c.id = (%s)", (id, ))
+    cursor.execute("SELECT a.* FROM address a join customer c on a.customer_id = c.id WHERE c.id = '" + id + "'")
     addresses = cursor.fetchall()
     cursor.close()
     return {"addresses": addresses}
@@ -100,7 +100,7 @@ async def create_customer(body: Request, conn=Depends(get_db_conn)) -> Any:
 def delete_customer(id, conn=Depends(get_db_conn)) -> Any:
     cursor = conn.cursor()
 
-    cursor.execute("DELETE FROM customer WHERE id = %s", (id,))
+    cursor.execute("DELETE FROM customer WHERE id = = '" + id + "'")
     conn.commit()
 
     if cursor.rowcount == 0:
@@ -115,7 +115,7 @@ def delete_customer(id, conn=Depends(get_db_conn)) -> Any:
 def delete_address(id, conn=Depends(get_db_conn)) -> Any:
     cursor = conn.cursor()
 
-    cursor.execute("DELETE FROM address WHERE id = (%s)", (str(id),))
+    cursor.execute("DELETE FROM address WHERE id = '" + id + "'")
     conn.commit()
 
     if cursor.rowcount == 0:
@@ -166,7 +166,7 @@ async def update_customer(id, customer: Request, conn=Depends(get_db_conn)):
 async def login(customer_request: Request, conn=Depends(get_db_conn)):
     customer_request = await customer_request.json()
     cursor = conn.cursor()
-    cursor.execute("SELECT * FROM customer WHERE customer.email = %s", (customer_request["username"],))
+    cursor.execute("SELECT * FROM customer WHERE customer.email = '" + customer_request["username"] + "'")
     customer = cursor.fetchone()    
     cursor.close()
     stored_password_hash = customer[6]
@@ -229,7 +229,7 @@ async def update_password(
 ):
     password_request = await password_request.json()
     cursor = conn.cursor()
-    cursor.execute("SELECT * FROM customer WHERE customer.id = (%s)", (str(id), ))
+    cursor.execute("SELECT * FROM customer WHERE customer.id = '" + id + "'")
     customer = cursor.fetchone()
     print(customer)
     cursor.close()
