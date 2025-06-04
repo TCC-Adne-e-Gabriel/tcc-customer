@@ -22,7 +22,7 @@ services:
         - tcc-network
       depends_on:
         - db
-      command: bash scripts/prestart.sh
+      command: sh scripts/prestart.sh
       env_file:
         - .env
       environment:
