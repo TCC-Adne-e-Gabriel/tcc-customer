@@ -8,7 +8,7 @@ def get_db_conn():
         dbname="customer_db",
         user="moretti-customer", 
         password="moretti",
-        host="localhost",
+        host="db",
         port="5432"
     )
 
@@ -23,7 +23,7 @@ def get_db_connection():
         dbname="customer_db",
         user="moretti-customer", 
         password="moretti",
-        host="localhost",
+        host="db",
         port="5432"
     )
 
