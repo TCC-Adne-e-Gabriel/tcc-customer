@@ -31,3 +31,7 @@ class Message(BaseModel):
 
 class CustomerChangePassword(BaseModel):
     password: str
+
+class LoginRequest(BaseModel): 
+    email: str
+    password: str

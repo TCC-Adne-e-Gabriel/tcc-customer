@@ -1,15 +1,22 @@
 from fastapi import FastAPI
-from fastapi import APIRouter, HTTPException, Request, status
+from fastapi import APIRouter, HTTPException
+from http import HTTPStatus
+from app.core.encrypt import encrypt_data
 from ...deps import SessionDep
-from typing import List
-from app.schemas.address import AddressResponse, AddressRequest, AddressUpdatedRequest
 from app.services.customer import CustomerService
-from app.schemas.customer import CustomerRequest, CustomerResponse, PasswordRequest, CustomerUpdateRequest
+from app.schemas.customer import (
+    CustomerRequest,
+    CustomerResponse,
+    PasswordRequest,
+    CustomerUpdateRequest, 
+    LoginRequest
+)
 from app.deps import SessionDep
 from uuid import UUID
 from app.services.address import AddressService
 from app.schemas.customer import Message
 
+TOKEN = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ1c2VySGFyZGNvZGVkIiwibmFtZSI6IkFsZ3VucyIsInJvbGUiOiJVc2VyIn0"
 
 app = FastAPI()
 router = APIRouter(prefix="/customer")
@@ -39,7 +46,7 @@ def create_customer(
     if(customer_email): 
         raise HTTPException(
             status_code=400, 
-            detail="User with this email already exists in the system"
+            detail="User with this email already exists"
         )
     customer = customer_service.create_customer(session=session, customer=customer)
     return customer
@@ -55,7 +62,7 @@ def update_customer(
     if(customer_email and customer_email.id != id): 
         raise HTTPException(
             status_code=400, 
-            detail="User with this email already exists in the system"
+            detail="User with this email already exists"
         )
     customer_id = customer_service.get_customer(session=session, customer_id=id)
     customer = customer_service.update_customer(session=session, customer=customer_request, current_customer=customer_id)
@@ -75,7 +82,7 @@ def delete_user(
         )
     address_service.delete_addresses(session, id)
     customer_service.delete_customer(session, customer)
-    return Message(message="User deleteds uccessfully")
+    return Message(message="User deleted successfully")
 
 
 @router.patch("/password/{id}")
@@ -99,60 +106,14 @@ def update_password(
     return Message(message="Password updated successfully")
 
 
-@router.get("/{id}/address/", response_model=List[AddressResponse])
-def read_customer_adresses(
-    id: UUID, 
-    session: SessionDep, 
-) : 
-    addresses = address_service.get_user_addresses(session, id)
-    return addresses
-
-
-@router.get("/address/{address_id}", response_model=AddressResponse)
-def read_address_by_id(
-    address_id: UUID, 
-    session: SessionDep, 
-) : 
-    addresses = address_service.get_address(session, address_id)
-    return addresses
-
-
-@router.post("/{id}/address/", response_model=AddressResponse)
-def read_addresses(
-    id: UUID, 
-    address_request: AddressRequest,
-    session: SessionDep, 
-): 
-    addresses = address_service.create_address(session, address_request, id)
-    return addresses
+@router.post("/login/") 
+def login(customer_request: LoginRequest, session: SessionDep):
+    customer = customer_service.get_customer_by_email(session, customer_request.email)
+    stored_password_hash = customer.password
     
-
-@router.patch("/address/{address_id}", response_model=AddressUpdatedRequest)
-def update_customer(
-    address_id: UUID,
-    session: SessionDep, 
-    address_request: AddressUpdatedRequest
-): 
-    address_by_id = address_service.get_address(session=session, address_id=address_id)
-    if(not address_by_id):
-        raise HTTPException(
-            status_code=400, 
-            detail="Address not found"
-        )
-    customer = address_service.update_address(session=session, address=address_request, current_address=address_by_id)
-    return customer
-
-@router.delete("/address/{address_id}", response_model=Message)
-def update_customer(
-    address_id: UUID,
-    session: SessionDep, 
-): 
-    address = address_service.get_address(session=session, address_id=address_id)
-    if(not address):
-        raise HTTPException(
-            status_code=400, 
-            detail="Address not found"
-        )
-    address_service.delete_address_by_id(session=session, address_id=address_id)
-    return Message(message="Address deleted successfully")
-
+    provided_password_hash = encrypt_data(customer_request.password)
+    if (not stored_password_hash) or (provided_password_hash != stored_password_hash): 
+        raise HTTPException(status_code=HTTPStatus.UNAUTHORIZED, detail="Credenciais inválidas")
+    
+    return {"access_token": TOKEN, "token_type": "bearer"}
+        

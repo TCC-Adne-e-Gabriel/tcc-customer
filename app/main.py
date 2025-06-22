@@ -1,8 +1,7 @@
-from fastapi import FastAPI, APIRouter
+from fastapi import FastAPI
 from starlette.middleware.cors import CORSMiddleware
 from app.core.settings import settings
 from app.api.main import api_router
-
 
 app = FastAPI(
     title="tcc-customer",
@@ -18,4 +17,3 @@ app.add_middleware(
 )
 
 app.include_router(api_router, prefix=settings.API_V1_STR)
-
