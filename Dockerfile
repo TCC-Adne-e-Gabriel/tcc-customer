@@ -15,8 +15,6 @@ WORKDIR /app/
 
 ENV PYTHONPATH=/app
 
-COPY app/ ./app/
-COPY scripts/ ./scripts/
-COPY .env .env
+COPY app/ scripts/ .env ./
 
 CMD ["fastapi", "run", "--workers", "4", "app/main.py"]
