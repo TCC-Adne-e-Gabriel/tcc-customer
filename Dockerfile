@@ -11,10 +11,12 @@ RUN pip install --upgrade pip && pip install -r requirements.txt && addgroup --g
 
 USER app
 
-WORKDIR /app/
+WORKDIR /app
 
 ENV PYTHONPATH=/app
 
-COPY app/ scripts/ .env ./
+COPY app/ ./app/
+COPY scripts/ ./scripts/
+COPY .env .env
 
 CMD ["fastapi", "run", "--workers", "4", "app/main.py"]

@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi import APIRouter, HTTPException
 from http import HTTPStatus
-from app.core.encrypt import encrypt_data
+from app.core.encrypt import encrypt_data, check_password
 from ...deps import SessionDep
 from app.services.customer import CustomerService
 from app.schemas.customer import (
@@ -112,7 +112,7 @@ def login(customer_request: LoginRequest, session: SessionDep):
     stored_password_hash = customer.password
     
     provided_password_hash = encrypt_data(customer_request.password)
-    if (not stored_password_hash) or (provided_password_hash != stored_password_hash): 
+    if (not stored_password_hash) or not check_password(provided_password_hash, stored_password_hash): 
         raise HTTPException(status_code=HTTPStatus.UNAUTHORIZED, detail="Credenciais inválidas")
     
     return {"access_token": TOKEN, "token_type": "bearer"}
