@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi import APIRouter, HTTPException, Request, status
-from ...deps import SessionDep
+from ....deps import SessionDep
 from typing import List
 from app.schemas.address import AddressResponse, AddressRequest, AddressUpdatedRequest
 from app.services.customer import CustomerService

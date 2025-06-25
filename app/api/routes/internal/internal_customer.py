@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi import APIRouter, HTTPException
 from http import HTTPStatus
 from app.core.encrypt import encrypt_data
-from ...deps import SessionDep
+from ....deps import SessionDep
 from app.services.customer import CustomerService
 from app.schemas.customer import (
     CustomerRequest,
@@ -15,14 +15,14 @@ from app.deps import SessionDep
 from uuid import UUID
 from app.services.address import AddressService
 from app.schemas.customer import Message
+from http import HTTPStatus
 
 TOKEN = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ1c2VySGFyZGNvZGVkIiwibmFtZSI6IkFsZ3VucyIsInJvbGUiOiJVc2VyIn0"
 
 app = FastAPI()
-router = APIRouter(prefix="/customer")
+router = APIRouter(prefix="/internal/customer")
 customer_service = CustomerService()
 address_service = AddressService()
-
 
 @router.get("/{id}", response_model=CustomerResponse)
 def read_customer_by_id(
@@ -32,8 +32,8 @@ def read_customer_by_id(
     customer = customer_service.get_customer(session=session, customer_id=id)
     if(not customer): 
         raise HTTPException(
-            status_code=400, 
-            detail="User with this id doesnt exist"
+            status_code=HTTPStatus.NOT_FOUND, 
+            detail="User with this id not found"
         )
     return customer
 
@@ -45,7 +45,7 @@ def create_customer(
     customer_email = customer_service.get_customer_by_email(session=session, email=customer.email)
     if(customer_email): 
         raise HTTPException(
-            status_code=400, 
+            status_code=HTTPStatus.BAD_REQUEST, 
             detail="User with this email already exists"
         )
     customer = customer_service.create_customer(session=session, customer=customer)
@@ -61,7 +61,7 @@ def update_customer(
     customer_email = customer_service.get_customer_by_email(session=session, email=customer_request.email)
     if(customer_email and customer_email.id != id): 
         raise HTTPException(
-            status_code=400, 
+            status_code=HTTPStatus.BAD_REQUEST, 
             detail="User with this email already exists"
         )
     customer_id = customer_service.get_customer(session=session, customer_id=id)
@@ -77,7 +77,7 @@ def delete_user(
     customer = customer_service.get_customer(session, id)
     if(not customer_service.get_customer(session, id)): 
         raise HTTPException(
-            status_code=400, 
+            status_code=HTTPStatus.BAD_REQUEST, 
             detail="User not found"
         )
     address_service.delete_addresses(session, id)
@@ -93,12 +93,12 @@ def update_password(
 ):
     if(not customer_service.check_password(session, password_request.current_password, id)): 
         raise HTTPException(
-            status_code=400, 
+            status_code=HTTPStatus.UNAUTHORIZED, 
             detail="Incorrect Password"
         )
     if(password_request.current_password == password_request.new_password):
         raise HTTPException(
-            status_code=400, 
+            status_code=HTTPStatus.BAD_REQUEST, 
             detail="New password cannot be the same"
         )
     customer = customer_service.get_customer(session, id)
