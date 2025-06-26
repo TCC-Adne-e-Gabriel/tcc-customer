@@ -1,10 +1,16 @@
 from typing import Any
 
-class UserNotExists(Exception): 
+class InvalidPasswordException(Exception): 
     pass
 
-class InvalidPassword(Exception): 
+class AddressNotFoundException(Exception): 
     pass
 
-class InvalidPassword(Exception): 
+class UserNotFoundException(Exception):
+    pass
+
+class UserEmailAlreadyExistsException(Exception):
+    pass
+
+class SamePasswordException(Exception): 
     pass

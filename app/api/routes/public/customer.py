@@ -1,7 +1,6 @@
 from fastapi import FastAPI
 from fastapi import APIRouter, HTTPException
 from http import HTTPStatus
-from app.core.encrypt import encrypt_data
 from ....deps import SessionDep
 from app.services.customer import CustomerService
 from app.schemas.customer import (
@@ -13,6 +12,7 @@ from app.schemas.customer import (
 )
 from app.deps import SessionDep
 from uuid import UUID
+from app.exceptions import UserNotFoundException, SamePasswordException, InvalidPasswordException, UserEmailAlreadyExistsException
 from app.services.address import AddressService
 from app.schemas.customer import Message
 from http import HTTPStatus
@@ -24,32 +24,41 @@ router = APIRouter(prefix="/customer")
 customer_service = CustomerService()
 address_service = AddressService()
 
-@router.get("/{id}", response_model=CustomerResponse)
+@router.get("/{id}/", response_model=CustomerResponse)
 def read_customer_by_id(
     id: UUID, 
     session: SessionDep, 
-) : 
-    customer = customer_service.get_customer(session=session, customer_id=id)
-    if(not customer): 
+) -> CustomerResponse: 
+    try:
+        customer = customer_service.get_customer(session=session, customer_id=id)
+        return customer
+    except UserNotFoundException as e:
         raise HTTPException(
             status_code=HTTPStatus.NOT_FOUND, 
-            detail="User with this id not found"
+            detail="User not found"
         )
-    return customer
+    except Exception as e: 
+        raise HTTPException(
+            status_code=HTTPStatus.BAD_REQUEST, 
+        )
 
 @router.post("/", response_model=CustomerResponse, status_code=201)
 def create_customer(
     session: SessionDep, 
-    customer: CustomerRequest
-): 
-    customer_email = customer_service.get_customer_by_email(session=session, email=customer.email)
-    if(customer_email): 
+    customer_request: CustomerRequest
+) -> CustomerResponse: 
+    try: 
+        customer = customer_service.create_customer(session=session, customer=customer_request)
+        return customer
+    except UserEmailAlreadyExistsException as e:
         raise HTTPException(
             status_code=HTTPStatus.BAD_REQUEST, 
             detail="User with this email already exists"
         )
-    customer = customer_service.create_customer(session=session, customer=customer)
-    return customer
+    except Exception as e: 
+        raise HTTPException(
+            status_code=HTTPStatus.BAD_REQUEST, 
+        )
 
 
 @router.patch("/{id}", response_model=CustomerResponse)
@@ -57,32 +66,44 @@ def update_customer(
     id: UUID,
     session: SessionDep, 
     customer_request: CustomerUpdateRequest
-): 
-    customer_email = customer_service.get_customer_by_email(session=session, email=customer_request.email)
-    if(customer_email and customer_email.id != id): 
+) -> CustomerResponse: 
+    try: 
+        customer = customer_service.update_customer(session=session, customer_id=id, customer_request=customer_request)
+        return customer
+    except UserEmailAlreadyExistsException as e:
         raise HTTPException(
             status_code=HTTPStatus.BAD_REQUEST, 
             detail="User with this email already exists"
         )
-    customer_id = customer_service.get_customer(session=session, customer_id=id)
-    customer = customer_service.update_customer(session=session, customer=customer_request, current_customer=customer_id)
-    return customer
+    except UserNotFoundException as e:
+        raise HTTPException(
+            status_code=HTTPStatus.NOT_FOUND, 
+            detail="User not found"
+        )
+    except Exception as e: 
+        raise HTTPException(
+            status_code=HTTPStatus.BAD_REQUEST, 
+        )
 
 
-@router.delete("/{id}")
+@router.delete("/{id}/")
 def delete_user(
     id: UUID, 
     session: SessionDep, 
-):
-    customer = customer_service.get_customer(session, id)
-    if(not customer_service.get_customer(session, id)): 
+) -> Message:
+    try:
+        address_service.delete_addresses(session, id)
+        customer_service.delete_customer(session, id)
+        return Message(message="User deleted successfully")
+    except UserNotFoundException as e: 
         raise HTTPException(
-            status_code=HTTPStatus.BAD_REQUEST, 
+            status_code=HTTPStatus.NOT_FOUND, 
             detail="User not found"
         )
-    address_service.delete_addresses(session, id)
-    customer_service.delete_customer(session, customer)
-    return Message(message="User deleted successfully")
+    except Exception as e: 
+        raise HTTPException(
+            status_code=HTTPStatus.BAD_REQUEST, 
+        )
 
 
 @router.patch("/password/{id}")
@@ -90,30 +111,42 @@ def update_password(
     id: UUID, 
     session: SessionDep, 
     password_request: PasswordRequest
-):
-    if(not customer_service.check_password(session, password_request.current_password, id)): 
-        raise HTTPException(
-            status_code=HTTPStatus.UNAUTHORIZED, 
-            detail="Incorrect Password"
-        )
-    if(password_request.current_password == password_request.new_password):
+) -> Message:
+    try: 
+        customer_service.update_password(session, password_request, id) 
+        return Message(message="Password updated successfully")
+    except SamePasswordException as e: 
         raise HTTPException(
             status_code=HTTPStatus.BAD_REQUEST, 
             detail="New password cannot be the same"
         )
-    customer = customer_service.get_customer(session, id)
-    customer_service.update_password(session, password_request.new_password, customer) 
-    return Message(message="Password updated successfully")
+    except InvalidPasswordException:
+        raise HTTPException(
+            status_code=HTTPStatus.UNAUTHORIZED, 
+            detail="Incorrect Password"
+        )
+    except Exception as e: 
+        raise HTTPException(
+            status_code=HTTPStatus.BAD_REQUEST, 
+        )
 
 
 @router.post("/login/") 
-def login(customer_request: LoginRequest, session: SessionDep):
-    customer = customer_service.get_customer_by_email(session, customer_request.email)
-    stored_password_hash = customer.password
+def login(login_request: LoginRequest, session: SessionDep):
+    try: 
+        customer_service.login(
+            session=session, 
+            login_request=login_request
+        )
+        return {"access_token": TOKEN, "token_type": "bearer"}
     
-    provided_password_hash = encrypt_data(customer_request.password)
-    if (not stored_password_hash) or (provided_password_hash != stored_password_hash): 
-        raise HTTPException(status_code=HTTPStatus.UNAUTHORIZED, detail="Credenciais inválidas")
-    
-    return {"access_token": TOKEN, "token_type": "bearer"}
+    except InvalidPasswordException:
+        raise HTTPException(
+            status_code=HTTPStatus.UNAUTHORIZED, 
+            detail="Incorrect Credentials"
+        )
+    except Exception as e: 
+        raise HTTPException(
+            status_code=HTTPStatus.BAD_REQUEST, 
+        )
         

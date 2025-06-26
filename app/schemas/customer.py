@@ -3,24 +3,26 @@ from pydantic import BaseModel
 from uuid import UUID
 from typing import Optional
 
-class CustomerRequest(BaseModel):
+class CustomerBase(BaseModel): 
     name: str
     email: str
-    password: str
     phone: str
 
-class CustomerUpdateRequest(BaseModel):
-    name: Optional[str] = None
-    email: Optional[str] = None
-    phone: Optional[str] = None
-
-class CustomerResponse(CustomerRequest):
+class CustomerResponse(CustomerBase): 
     id: UUID
     created_at: datetime
     updated_at: datetime
 
     class Config:
         from_attributes = True
+
+class CustomerRequest(CustomerBase):
+    password: str
+
+class CustomerUpdateRequest(BaseModel):
+    name: Optional[str] = None
+    email: Optional[str] = None
+    phone: Optional[str] = None
 
 class PasswordRequest(BaseModel):
     current_password: str
