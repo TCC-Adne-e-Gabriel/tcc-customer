@@ -3,6 +3,13 @@ from pydantic import BaseModel
 from uuid import UUID
 from typing import Optional
 
+class Token(BaseModel): 
+    access_token: str
+    token_type: str
+
+class TokenData(BaseModel): 
+    username: str | None = None
+    
 class CustomerBase(BaseModel): 
     name: str
     email: str

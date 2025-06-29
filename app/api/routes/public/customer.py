@@ -1,5 +1,5 @@
-from fastapi import FastAPI
-from fastapi import APIRouter, HTTPException
+from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
+from fastapi import FastAPI, APIRouter, HTTPException, Depends
 from http import HTTPStatus
 from ....deps import SessionDep
 from app.services.customer import CustomerService
@@ -8,20 +8,26 @@ from app.schemas.customer import (
     CustomerResponse,
     PasswordRequest,
     CustomerUpdateRequest, 
-    LoginRequest
+    LoginRequest, 
+    Token
 )
+from datetime import timedelta
+from typing import Annotated
 from app.deps import SessionDep
 from uuid import UUID
 from app.exceptions import UserNotFoundException, SamePasswordException, InvalidPasswordException, UserEmailAlreadyExistsException
 from app.services.address import AddressService
+from app.services.auth import AuthService
 from app.schemas.customer import Message
 from http import HTTPStatus
-
-TOKEN = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ1c2VySGFyZGNvZGVkIiwibmFtZSI6IkFsZ3VucyIsInJvbGUiOiJVc2VyIn0"
+from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
+from app.core.settings import Settings
 
 app = FastAPI()
 router = APIRouter(prefix="/customer")
 customer_service = CustomerService()
+settings = Settings()
+auth_service = AuthService()
 address_service = AddressService()
 
 @router.get("/{id}/", response_model=CustomerResponse)
@@ -129,24 +135,26 @@ def update_password(
         raise HTTPException(
             status_code=HTTPStatus.BAD_REQUEST, 
         )
+        
 
-
-@router.post("/login/") 
-def login(login_request: LoginRequest, session: SessionDep):
-    try: 
-        customer_service.login(
-            session=session, 
-            login_request=login_request
+@router.post("/login/")
+async def login_for_access_token(
+    session: SessionDep,
+    form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
+) -> Token:
+    try:
+        user = auth_service.authenticate_user(session, form_data)
+        access_token_expires = timedelta(days=settings.ACCESS_TOKEN_EXPIRE_DAYS)
+        access_token = auth_service.create_access_token(
+            data={"sub": user.email}, expires_delta=access_token_expires
         )
-        return {"access_token": TOKEN, "token_type": "bearer"}
-    
-    except InvalidPasswordException:
+        return Token(access_token=access_token, token_type="bearer")
+    except InvalidPasswordException: 
         raise HTTPException(
-            status_code=HTTPStatus.UNAUTHORIZED, 
-            detail="Incorrect Credentials"
+            status_code=HTTPStatus.UNAUTHORIZED,
+            detail="Incorrect username or password"
         )
     except Exception as e: 
         raise HTTPException(
             status_code=HTTPStatus.BAD_REQUEST, 
         )
-        

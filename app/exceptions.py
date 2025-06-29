@@ -14,3 +14,6 @@ class UserEmailAlreadyExistsException(Exception):
 
 class SamePasswordException(Exception): 
     pass
+
+class InvalidTokenException(Exception): 
+    pass

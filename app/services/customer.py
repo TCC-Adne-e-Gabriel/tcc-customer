@@ -1,11 +1,11 @@
 from app.models.customer import Customer
+from fastapi import Depends
 from app.schemas.customer import (
     PasswordRequest,
     CustomerResponse,
     CustomerChangePassword,
     CustomerUpdateRequest,
     CustomerRequest, 
-    LoginRequest
 )
 from app.schemas.customer import CustomerResponse
 from app.core.encrypt import encrypt_data
@@ -15,7 +15,7 @@ from app.exceptions import (
     UserNotFoundException, 
     UserEmailAlreadyExistsException,
     InvalidPasswordException, 
-    SamePasswordException
+    SamePasswordException, 
 )
 from uuid import UUID
 
@@ -82,14 +82,6 @@ class CustomerService():
         result = session.exec(statement).first()
         return result
     
-    def login(self, session: Session, login_request: LoginRequest): 
-        customer = self.get_customer_by_email(session, login_request.email)
-        stored_password_hash = customer.password
-        
-        provided_password_hash = encrypt_data(login_request.password)
-        if (not stored_password_hash) or (provided_password_hash != stored_password_hash): 
-            raise InvalidPasswordException
-        
     def delete_customer(self, session: Session, customer_id: UUID): 
         customer = self.get_customer(session=session, customer_id=customer_id)
         if not customer:
