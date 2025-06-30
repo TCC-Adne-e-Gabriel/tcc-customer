@@ -1,19 +1,26 @@
-from typing import Any
+class AppException(Exception): 
+    def __init__(self, status_code: int, detail: str): 
+        self.detail = detail
+        self.status_code = status_code
+        
 
-class InvalidPasswordException(Exception): 
+class InvalidPasswordException(AppException): 
     pass
 
-class AddressNotFoundException(Exception): 
+class AddressNotFoundException(AppException): 
     pass
 
-class UserNotFoundException(Exception):
+class UserNotFoundException(AppException):
     pass
 
-class UserEmailAlreadyExistsException(Exception):
+class UserEmailAlreadyExistsException(AppException):
     pass
 
-class SamePasswordException(Exception): 
+class SamePasswordException(AppException): 
     pass
 
-class InvalidTokenException(Exception): 
+class InvalidTokenException(AppException): 
+    pass
+
+class UnauthorizedException(AppException): 
     pass

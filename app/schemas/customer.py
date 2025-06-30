@@ -8,8 +8,8 @@ class Token(BaseModel):
     token_type: str
 
 class TokenData(BaseModel): 
-    username: str | None = None
-    
+    username: UUID | None = None
+
 class CustomerBase(BaseModel): 
     name: str
     email: str
@@ -25,11 +25,13 @@ class CustomerResponse(CustomerBase):
 
 class CustomerRequest(CustomerBase):
     password: str
+    active: bool = True
 
 class CustomerUpdateRequest(BaseModel):
     name: Optional[str] = None
     email: Optional[str] = None
     phone: Optional[str] = None
+    active: Optional[bool] = None
 
 class PasswordRequest(BaseModel):
     current_password: str
@@ -42,5 +44,5 @@ class CustomerChangePassword(BaseModel):
     password: str
 
 class LoginRequest(BaseModel): 
-    email: str
+    username: str
     password: str
