@@ -8,7 +8,7 @@ from uuid import UUID
 from app.exceptions import AddressNotFoundException, UserNotFoundException
 from app.services.address import AddressService
 from app.schemas.customer import Message
-from app.services import auth
+from app import auth
 from app.models.customer import Customer
 
 app = FastAPI()

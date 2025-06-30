@@ -18,7 +18,7 @@ from uuid import UUID
 from app.services.address import AddressService
 from app.schemas.customer import Message
 from app.core.settings import Settings
-from app.services import auth
+from app import auth
 from typing import List
 
 app = FastAPI()
