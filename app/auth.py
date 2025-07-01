@@ -73,7 +73,6 @@ def authenticate_user(session: Session, login_request: LoginRequest):
     
 def role_required(roles: List[str]):
     async def checker(current_customer: Customer = Depends(get_current_customer)):
-        print(roles)
         if not current_customer.role.value in roles:
             raise UnauthorizedException(HTTPStatus.UNAUTHORIZED, detail="User unauthorized")
         return current_customer

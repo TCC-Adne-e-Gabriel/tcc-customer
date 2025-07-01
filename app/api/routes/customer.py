@@ -36,6 +36,7 @@ def read_customers(
 
 @router.get("/{id}/", response_model=CustomerResponse, dependencies=[Depends(auth.role_required(["admin", "service"]))])
 def internal_read_customer_by_id(
+    id: UUID, 
     session: SessionDep
 ) -> CustomerResponse: 
     return customer_service.get_customer(session, id)
@@ -62,8 +63,7 @@ def update_customer(
     session: SessionDep, 
     customer_request: CustomerUpdateRequest,
     current_customer: Customer = Depends(auth.get_current_customer)
-) -> CustomerResponse: 
-    
+) -> CustomerResponse:  
     customer = customer_service.update_customer(session=session, current_customer=current_customer, customer_request=customer_request)
     return customer
 
@@ -73,7 +73,6 @@ def delete_user(
     session: SessionDep, 
     id: UUID
 ) -> Message:
-        
     address_service.delete_addresses(session, id)
     customer_service.delete_customer(session, id)
     return Message(message="User deleted successfully")
@@ -99,7 +98,7 @@ async def login_for_access_token(
     access_token_expires = timedelta(days=settings.ACCESS_TOKEN_EXPIRE_DAYS)
 
     access_token = auth.create_access_token(
-        data={"sub": str(user.id), "role": user.role}, 
+        data={"sub": str(user.id), "name": user.name, "role": user.role}, 
         expires_delta=access_token_expires
     )
     
