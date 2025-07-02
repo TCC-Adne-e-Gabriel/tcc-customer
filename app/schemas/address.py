@@ -1,19 +1,19 @@
-from app.models.address import AddressBase
 from datetime import datetime
 from pydantic import BaseModel
 from typing import Optional
 from uuid import UUID
 
-
 class AddressRequest(BaseModel):
     state: str
     city: str
     complement: Optional[str] = None
-    neighbothood: str
-    customer_id: Optional[str] = None
+    neighborhood: str
 
-
-class AddressResponse(AddressBase):
+class AddressResponse(BaseModel):
+    state: str
+    city: str
+    complement: Optional[str]
+    neighborhood: str
     id: UUID
     created_at: datetime
     updated_at: datetime
@@ -25,4 +25,4 @@ class AddressUpdatedRequest(BaseModel):
     state: Optional[str] = None
     city: Optional[str] = None
     complement: Optional[str] = None
-    neighbothood: Optional[str] = None
+    neighborhood: Optional[str] = None
