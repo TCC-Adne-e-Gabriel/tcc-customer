@@ -19,7 +19,6 @@ from app.exceptions import (
 from uuid import UUID
 from app.deps import SessionDep
 from app.models.customer import Role
-from http import HTTPStatus
 
 class CustomerService():
     def create_customer(self, session: Session, customer: CustomerRequest) -> CustomerResponse:

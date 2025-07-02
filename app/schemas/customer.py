@@ -8,7 +8,8 @@ class Token(BaseModel):
     token_type: str
 
 class TokenData(BaseModel): 
-    username: UUID | None = None
+    id: UUID | None = None
+    role: str | None = None
 
 class CustomerBase(BaseModel): 
     name: str

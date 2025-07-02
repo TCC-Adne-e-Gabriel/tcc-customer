@@ -8,7 +8,8 @@ from app.schemas.customer import (
     CustomerResponse,
     PasswordRequest,
     CustomerUpdateRequest, 
-    Token
+    Token, 
+    TokenData
 )
 from app.models.customer import Customer
 from datetime import timedelta
@@ -43,9 +44,10 @@ def internal_read_customer_by_id(
 
 @router.get("/read/me/", response_model=CustomerResponse)
 def read_customer_by_id(
-    current_customer: Customer = Depends(auth.role_required(["admin", "user"]))
+    session: SessionDep,
+    token_data: TokenData = Depends(auth.role_required(["admin", "user"]))
 ) -> CustomerResponse: 
-    return current_customer
+    return customer_service.get_customer(session=session, customer_id=token_data.id)
 
 
 @router.post("/", response_model=CustomerResponse, status_code=201)
@@ -62,8 +64,9 @@ def create_customer(
 def update_customer(
     session: SessionDep, 
     customer_request: CustomerUpdateRequest,
-    current_customer: Customer = Depends(auth.get_current_customer)
+    token_data: TokenData = Depends(auth.get_current_customer_data)
 ) -> CustomerResponse:  
+    current_customer = customer_service.get_customer(session=session, customer_id=token_data.id)
     customer = customer_service.update_customer(session=session, current_customer=current_customer, customer_request=customer_request)
     return customer
 
@@ -82,9 +85,9 @@ def update_password(
     id: UUID, 
     password_request: PasswordRequest, 
     session: SessionDep, 
-    current_customer: Customer = Depends(auth.role_required(["admin", "user"]))
+    token_data: TokenData = Depends(auth.role_required(["admin", "user"]))
 ) -> Message:
-
+    current_customer = customer_service.get_customer(session=session, customer_id=token_data.id)
     customer_service.update_password(session, password_request, current_customer) 
     return Message(message="Password updated successfully")
 

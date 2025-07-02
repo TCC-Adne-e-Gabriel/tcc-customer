@@ -10,6 +10,7 @@ from app.services.address import AddressService
 from app.schemas.customer import Message
 from app import auth
 from app.models.customer import Customer
+from app.schemas.customer import TokenData
 
 app = FastAPI()
 router = APIRouter(prefix="/address")
@@ -19,13 +20,13 @@ address_service = AddressService()
 @router.get("/me/", response_model=List[AddressResponse])
 def read_customer_adresses(
     session: SessionDep, 
-    current_customer: Customer = Depends(auth.role_required(["admin", "user"]))
+    token_data: TokenData = Depends(auth.role_required(["admin", "user"]))
 ) -> List[AddressResponse]: 
         
-    addresses = address_service.get_user_addresses(session, current_customer.id)
+    addresses = address_service.get_user_addresses(session, token_data.id)
     return addresses
 
-@router.get("/{address_id}/", response_model=AddressResponse)
+@router.get("/{address_id}/", response_model=AddressResponse, dependencies=[Depends(auth.role_required(["admin", "user"]))])
 def read_address_by_id(
     address_id: UUID, 
     session: SessionDep, 
@@ -38,9 +39,9 @@ def read_address_by_id(
 def create_address(
     address_request: AddressRequest,
     session: SessionDep,     
-    current_customer: Customer = Depends(auth.role_required(["admin", "user"]))
+    token_data: TokenData = Depends(auth.role_required(["admin", "user"]))
 ): 
-    addresses = address_service.create_address(session, address_request, current_customer.id)
+    addresses = address_service.create_address(session, address_request, token_data.id)
     return addresses
 
 @router.patch("/{address_id}/", response_model=AddressResponse, dependencies=[Depends(auth.role_required(["admin", "user"]))])

@@ -38,28 +38,6 @@ def create_access_token(data: dict, expires_delta: timedelta | None = None):
     encoded_jwt = jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
     return encoded_jwt
         
-async def get_current_customer(session: SessionDep, token: str = Depends(oauth2_scheme)) -> Customer:
-    try:
-        payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
-        username = payload.get("sub")
-        if username is None:
-            raise InvalidTokenException
-        token_data = TokenData(username=username)
-    except InvalidTokenError:
-        raise InvalidTokenException
-    user = customer_service.get_customer(session=session, customer_id=token_data.username)
-    if not user:
-        raise UserNotFoundException
-    return user
-
-async def get_current_active_customer(
-    self, 
-    session: Session, 
-    token: str
-):
-    current_customer = self.get_current_customer(session=session, token=token)
-    return current_customer
-    
 def authenticate_user(session: Session, login_request: LoginRequest): 
     customer = customer_service.get_customer_by_email(session, login_request.username)
     if not customer: 
@@ -71,9 +49,23 @@ def authenticate_user(session: Session, login_request: LoginRequest):
         raise InvalidPasswordException
     return customer
     
+async def get_current_customer_data(token: str = Depends(oauth2_scheme)) -> TokenData:
+    try:
+        payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
+        customer_id = payload.get("sub")
+        role = payload.get("role")
+        if customer_id is None:
+            raise InvalidTokenError
+        if role is None: 
+            raise InvalidTokenError
+        token_data = TokenData(id=customer_id, role=role)
+    except InvalidTokenError:
+        raise InvalidPasswordException
+    return token_data
+    
 def role_required(roles: List[str]):
-    async def checker(current_customer: Customer = Depends(get_current_customer)):
-        if not current_customer.role.value in roles:
+    async def checker(decoded_token: TokenData = Depends(get_current_customer_data)):
+        if not decoded_token.role in roles:
             raise UnauthorizedException
-        return current_customer
+        return decoded_token
     return checker
