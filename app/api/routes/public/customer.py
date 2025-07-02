@@ -32,12 +32,12 @@ def read_customer_by_id(
     try:
         customer = customer_service.get_customer(session=session, customer_id=id)
         return customer
-    except UserNotFoundException as e:
+    except UserNotFoundException:
         raise HTTPException(
             status_code=HTTPStatus.NOT_FOUND, 
             detail="User not found"
         )
-    except Exception as e: 
+    except Exception: 
         raise HTTPException(
             status_code=HTTPStatus.BAD_REQUEST, 
         )
@@ -50,12 +50,12 @@ def create_customer(
     try: 
         customer = customer_service.create_customer(session=session, customer=customer_request)
         return customer
-    except UserEmailAlreadyExistsException as e:
+    except UserEmailAlreadyExistsException:
         raise HTTPException(
             status_code=HTTPStatus.BAD_REQUEST, 
             detail="User with this email already exists"
         )
-    except Exception as e: 
+    except Exception: 
         raise HTTPException(
             status_code=HTTPStatus.BAD_REQUEST, 
         )
@@ -70,17 +70,17 @@ def update_customer(
     try: 
         customer = customer_service.update_customer(session=session, customer_id=id, customer_request=customer_request)
         return customer
-    except UserEmailAlreadyExistsException as e:
+    except UserEmailAlreadyExistsException:
         raise HTTPException(
             status_code=HTTPStatus.BAD_REQUEST, 
             detail="User with this email already exists"
         )
-    except UserNotFoundException as e:
+    except UserNotFoundException:
         raise HTTPException(
             status_code=HTTPStatus.NOT_FOUND, 
             detail="User not found"
         )
-    except Exception as e: 
+    except Exception: 
         raise HTTPException(
             status_code=HTTPStatus.BAD_REQUEST, 
         )
@@ -95,12 +95,12 @@ def delete_user(
         address_service.delete_addresses(session, id)
         customer_service.delete_customer(session, id)
         return Message(message="User deleted successfully")
-    except UserNotFoundException as e: 
+    except UserNotFoundException: 
         raise HTTPException(
             status_code=HTTPStatus.NOT_FOUND, 
             detail="User not found"
         )
-    except Exception as e: 
+    except Exception: 
         raise HTTPException(
             status_code=HTTPStatus.BAD_REQUEST, 
         )
@@ -115,7 +115,7 @@ def update_password(
     try: 
         customer_service.update_password(session, password_request, id) 
         return Message(message="Password updated successfully")
-    except SamePasswordException as e: 
+    except SamePasswordException: 
         raise HTTPException(
             status_code=HTTPStatus.BAD_REQUEST, 
             detail="New password cannot be the same"
@@ -125,7 +125,7 @@ def update_password(
             status_code=HTTPStatus.UNAUTHORIZED, 
             detail="Incorrect Password"
         )
-    except Exception as e: 
+    except Exception: 
         raise HTTPException(
             status_code=HTTPStatus.BAD_REQUEST, 
         )
@@ -145,7 +145,7 @@ def login(login_request: LoginRequest, session: SessionDep):
             status_code=HTTPStatus.UNAUTHORIZED, 
             detail="Incorrect Credentials"
         )
-    except Exception as e: 
+    except Exception: 
         raise HTTPException(
             status_code=HTTPStatus.BAD_REQUEST, 
         )

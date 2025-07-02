@@ -24,7 +24,7 @@ def read_customer_adresses(
     try: 
         addresses = address_service.get_user_addresses(session, customer_id)
         return addresses
-    except Exception as e:
+    except Exception:
         raise HTTPException(HTTPStatus.BAD_REQUEST)
 
 
@@ -36,7 +36,7 @@ def read_address_by_id(
     try: 
         addresses = address_service.get_address(session, address_id)
         return addresses
-    except AddressNotFoundException as e: 
+    except AddressNotFoundException: 
         raise HTTPException(HTTPStatus.NOT_FOUND, detail="Address not found")
 
 @router.post("/customer/{id}/", response_model=AddressResponse)
@@ -50,7 +50,7 @@ def create_address(
     return addresses
     # except UserNotFoundException: 
     #     raise HTTPException(HTTPStatus.NOT_FOUND, detail="User not found")
-    # except Exception as e:
+    # except Exception:
     #     raise HTTPException(HTTPStatus.BAD_REQUEST)
 
 @router.patch("/{address_id}/", response_model=AddressResponse)
@@ -62,12 +62,12 @@ def update_address(
     try:
         customer = address_service.update_address(session=session, address=address_request, address_id=address_id)
         return customer
-    except AddressNotFoundException as e:
+    except AddressNotFoundException:
         raise HTTPException(
             status_code=400, 
             detail="Address not found"
         )
-    except Exception as e:
+    except Exception:
         raise HTTPException(HTTPStatus.BAD_REQUEST)
 
 
@@ -79,10 +79,10 @@ def delete_address(
     try:
         address_service.delete_address_by_id(session=session, address_id=address_id)
         return Message(message="Address deleted successfully")
-    except AddressNotFoundException as e:
+    except AddressNotFoundException:
         raise HTTPException(
             status_code=400, 
             detail="Address not found"
         )
-    except Exception as e:
+    except Exception:
         raise HTTPException(HTTPStatus.BAD_REQUEST)
