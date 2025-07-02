@@ -49,7 +49,7 @@ async def get_current_customer(session: SessionDep, token: str = Depends(oauth2_
         raise InvalidTokenException
     user = customer_service.get_customer(session=session, customer_id=token_data.username)
     if not user:
-        raise UserNotFoundException(HTTPStatus.NOT_FOUND, detail="User Not Found")
+        raise UserNotFoundException
     return user
 
 async def get_current_active_customer(
@@ -63,17 +63,17 @@ async def get_current_active_customer(
 def authenticate_user(session: Session, login_request: LoginRequest): 
     customer = customer_service.get_customer_by_email(session, login_request.username)
     if not customer: 
-        raise UserNotFoundException(HTTPStatus.NOT_FOUND, detail="User Not Found")
+        raise UserNotFoundException
     stored_password_hash = customer.password
     provided_password_hash = login_request.password
 
     if (not stored_password_hash) or not check_password(stored_password_hash, provided_password_hash): 
-        raise InvalidPasswordException(status_code=HTTPStatus.UNAUTHORIZED, detail="Incorrect username or passwor")
+        raise InvalidPasswordException
     return customer
     
 def role_required(roles: List[str]):
     async def checker(current_customer: Customer = Depends(get_current_customer)):
         if not current_customer.role.value in roles:
-            raise UnauthorizedException(HTTPStatus.UNAUTHORIZED, detail="User unauthorized")
+            raise UnauthorizedException
         return current_customer
     return checker

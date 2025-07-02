@@ -25,10 +25,7 @@ class CustomerService():
     def create_customer(self, session: Session, customer: CustomerRequest) -> CustomerResponse:
         customer_email = self.get_customer_by_email(session=session, email=customer.email)
         if(customer_email): 
-            raise UserEmailAlreadyExistsException(            
-                status_code=HTTPStatus.BAD_REQUEST, 
-                detail="User with this email already exists"
-            )
+            raise UserEmailAlreadyExistsException
 
         customer.password = encrypt.encrypt_data(customer.password)
         customer_data = customer.model_dump()
@@ -44,10 +41,7 @@ class CustomerService():
             customer = self.get_customer_by_email(session=session, email=customer_request.email)
 
             if(customer and customer.id != id): 
-                raise UserEmailAlreadyExistsException(            
-                    status_code=HTTPStatus.BAD_REQUEST, 
-                    detail="User with this email already exists"
-                )
+                raise UserEmailAlreadyExistsException
         
         customer_db = customer_request.model_dump(exclude_none=True)
         current_customer.sqlmodel_update(customer_db)
@@ -62,7 +56,7 @@ class CustomerService():
         statement = select(Customer).where(Customer.id == customer_id)
         customer = session.exec(statement).first()
         if(not customer):
-            raise UserNotFoundException(HTTPStatus.NOT_FOUND, detail="User Not Found")
+            raise UserNotFoundException
         return customer
     
     def get_customers(self, session: Session) -> CustomerResponse: 
@@ -73,16 +67,10 @@ class CustomerService():
     def update_password(self, session: Session, password_request: PasswordRequest, current_customer: Customer) -> CustomerResponse: 
 
         if(not encrypt.check_password(password_request.current_password, current_customer.password)): 
-            raise InvalidPasswordException(
-                HTTPStatus.UNAUTHORIZED, 
-                detail="Incorrect username or password"
-            )
+            raise InvalidPasswordException
         
         if(encrypt.check_password(current_customer.password, password_request.new_password)):
-            raise SamePasswordException(
-                status_code=HTTPStatus.BAD_REQUEST, 
-                detail="New password cannot be the same"
-            )
+            raise SamePasswordException
         
         current_customer = self.get_customer(session, id)
         customer_db = CustomerChangePassword(password=password_request.new_password).model_dump()

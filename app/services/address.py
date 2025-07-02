@@ -24,7 +24,7 @@ class AddressService():
     def update_address(self, session: Session, address: AddressUpdatedRequest, address_id: UUID) -> AddressResponse:
         current_address = self.get_address(session=session, address_id=address_id)
         if(not current_address):
-            raise AddressNotFoundException(status_code=HTTPStatus.NOT_FOUND, detail="Address not found")
+            raise AddressNotFoundException
         address_db = address.model_dump(exclude_none=True)
         current_address.sqlmodel_update(address_db)
         session.add(current_address)
@@ -39,7 +39,7 @@ class AddressService():
     def delete_address_by_id(self, session: Session, address_id: UUID): 
         current_address = self.get_address(session=session, address_id=address_id)
         if(not current_address):
-            raise AddressNotFoundException(status_code=HTTPStatus.NOT_FOUND, detail="Address not found")
+            raise AddressNotFoundException
         session.delete(current_address)
         session.commit()
 
@@ -47,7 +47,7 @@ class AddressService():
         statement = select(Address).where(Address.id == address_id)
         address = session.exec(statement).first()
         if(not address):
-            raise AddressNotFoundException(status_code=HTTPStatus.NOT_FOUND, detail="Address not found")
+            raise AddressNotFoundException
 
         return address
 
