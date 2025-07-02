@@ -1,33 +1,15 @@
-import psycopg2
-from fastapi import Depends
-from app.core.settings import Settings
-from contextlib import contextmanager
+from sqlmodel import Session, create_engine
+import logging
+from app.core.settings import settings
+from app.models.customer import Customer
+from app.models.address import Address
 
-def get_db_conn():
-    conn = psycopg2.connect(
-        dbname="customer_db",
-        user="moretti-customer", 
-        password="moretti",
-        host="db",
-        port="5432"
-    )
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
-    try:
-        yield conn
-    finally:
-        conn.close()
+engine = create_engine(str(settings.SQLALCHEMY_DATABASE_URI))
 
-@contextmanager
-def get_db_connection():
-    conn = psycopg2.connect(
-        dbname="customer_db",
-        user="moretti-customer", 
-        password="moretti",
-        host="db",
-        port="5432"
-    )
-
-    try:
-        yield conn
-    finally:
-        conn.close()
+def init_db(_session: Session) -> None:
+    from sqlmodel import SQLModel
+    SQLModel.metadata.create_all(engine)    
+    logger.info("Creating models")
