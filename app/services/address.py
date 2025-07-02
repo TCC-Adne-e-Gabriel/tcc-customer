@@ -3,6 +3,7 @@ from app.schemas.address import AddressResponse, AddressRequest, AddressUpdatedR
 from sqlmodel import Session, select, delete
 from typing import List
 from uuid import UUID
+from http import HTTPStatus
 from app.services.customer import CustomerService
 from app.exceptions import AddressNotFoundException
 
@@ -18,7 +19,6 @@ class AddressService():
         session.add(db_address)
         session.commit()
         session.refresh(db_address)
-        print("aquiii", db_address)
         return db_address
 
     def update_address(self, session: Session, address: AddressUpdatedRequest, address_id: UUID) -> AddressResponse:
@@ -48,6 +48,7 @@ class AddressService():
         address = session.exec(statement).first()
         if(not address):
             raise AddressNotFoundException
+
         return address
 
     def get_user_addresses(self, session: Session, customer_id: UUID) -> List[AddressResponse]:    

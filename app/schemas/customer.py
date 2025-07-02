@@ -3,6 +3,14 @@ from pydantic import BaseModel
 from uuid import UUID
 from typing import Optional
 
+class Token(BaseModel): 
+    access_token: str
+    token_type: str
+
+class TokenData(BaseModel): 
+    id: UUID | None = None
+    role: str | None = None
+
 class CustomerBase(BaseModel): 
     name: str
     email: str
@@ -18,11 +26,13 @@ class CustomerResponse(CustomerBase):
 
 class CustomerRequest(CustomerBase):
     password: str
+    active: bool = True
 
 class CustomerUpdateRequest(BaseModel):
     name: Optional[str] = None
     email: Optional[str] = None
     phone: Optional[str] = None
+    active: Optional[bool] = None
 
 class PasswordRequest(BaseModel):
     current_password: str
@@ -35,5 +45,5 @@ class CustomerChangePassword(BaseModel):
     password: str
 
 class LoginRequest(BaseModel): 
-    email: str
+    username: str
     password: str
