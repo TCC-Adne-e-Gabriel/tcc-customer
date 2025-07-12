@@ -6,6 +6,11 @@ from fastapi.responses import JSONResponse
 from fastapi import Request
 from http import HTTPStatus
 from .exceptions import AppException
+from app.customer_logging import logger
+from uuid import uuid4
+from app.context import user_id_context
+from app.middlewares import ClientIPMiddleware
+
 
 app = FastAPI(
     title="tcc-customer",
@@ -19,9 +24,11 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+app.add_middleware(ClientIPMiddleware)
 
 @app.exception_handler(AppException)
-async def user_not_found_exception_handler(request: Request, exc: AppException): 
+async def app_exception_handler(request: Request, exc: AppException): 
+    logger.error(f"{user_id_context.get()}", exc_info=exc)
     return JSONResponse(
         status_code=exc.status_code,
         content={"detail": f"{exc.detail}"}
@@ -29,9 +36,14 @@ async def user_not_found_exception_handler(request: Request, exc: AppException):
 
 @app.exception_handler(Exception)
 async def generic_exception_handler(request: Request, exc: Exception):
+    error_code = str(uuid4())[:8]
+    logger.error(f"{error_code}: {user_id_context.get()}", exc_info=exc)
     return JSONResponse(
-        status_code=HTTPStatus.BAD_REQUEST,
-        content={"detail": "Ocorreu um erro inesperado."}
+        status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
+        content = {
+            "detail": f"{error_code} - An unexpected error occurred. Please report the error code to support.",
+            "error_code": error_code,
+        }
     )
 
 app.include_router(api_router, prefix=settings.API_V1_STR)

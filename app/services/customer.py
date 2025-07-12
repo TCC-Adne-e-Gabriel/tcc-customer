@@ -19,6 +19,7 @@ from app.exceptions import (
 from uuid import UUID
 from app.deps import SessionDep
 from app.models.customer import Role
+from app.customer_logging import logger
 
 class CustomerService():
     def create_customer(self, session: Session, customer: CustomerRequest) -> CustomerResponse:
@@ -33,6 +34,8 @@ class CustomerService():
         session.add(db_customer)
         session.commit()
         session.refresh(db_customer)
+
+        logger.audit(f"Customer {db_customer.id} created")
         return db_customer
 
     def update_customer(self, session: Session, current_customer: Customer, customer_request: CustomerUpdateRequest) -> CustomerResponse:
@@ -47,6 +50,8 @@ class CustomerService():
         session.add(current_customer)
         session.commit()
         session.refresh(current_customer)
+        
+        logger.info(f"Customer {current_customer.id} updated")
         return current_customer
 
     def get_customer(self, session: SessionDep, customer_id: UUID) -> CustomerResponse: 
@@ -56,6 +61,8 @@ class CustomerService():
         customer = session.exec(statement).first()
         if(not customer):
             raise UserNotFoundException
+        
+        logger.info(f"Customer {customer.id} updated")
         return customer
     
     def get_customers(self, session: Session) -> CustomerResponse: 
@@ -77,6 +84,7 @@ class CustomerService():
         session.add(current_customer)
         session.commit()
         session.refresh(current_customer)
+        logger.info(f"Password updated")
         return current_customer
     
     def get_customer_by_email(self, session: Session, email: str) -> Customer: 
@@ -88,3 +96,6 @@ class CustomerService():
         customer = self.get_customer(session=session, customer_id=customer_id)
         session.delete(customer)
         session.commit()
+        logger.audit(f"Customer {customer_id} deleted")
+
+
