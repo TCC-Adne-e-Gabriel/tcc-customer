@@ -21,6 +21,9 @@ from app.schemas.customer import Message
 from app.core.settings import Settings
 from app import auth
 from typing import List
+from app.customer_logging import logger
+from app.context import user_context
+
 
 app = FastAPI()
 router = APIRouter(prefix="/customer")
@@ -39,14 +42,14 @@ def read_customers(
 def internal_read_customer_by_id(
     id: UUID, 
     session: SessionDep
-) -> CustomerResponse: 
+): 
     return customer_service.get_customer(session, id)
 
 @router.get("/read/me/", response_model=CustomerResponse)
 def read_customer_by_id(
     session: SessionDep,
     token_data: TokenData = Depends(auth.role_required(["admin", "user"]))
-) -> CustomerResponse: 
+): 
     return customer_service.get_customer(session=session, customer_id=token_data.id)
 
 
@@ -54,8 +57,7 @@ def read_customer_by_id(
 def create_customer(
     session: SessionDep, 
     customer_request: CustomerRequest
-) -> CustomerResponse: 
-
+): 
     customer = customer_service.create_customer(session=session, customer=customer_request)
     return customer
 
@@ -64,18 +66,21 @@ def create_customer(
 def update_customer(
     session: SessionDep, 
     customer_request: CustomerUpdateRequest,
-    token_data: TokenData = Depends(auth.get_current_customer_data)
-) -> CustomerResponse:  
+    decoded_token: TokenData = Depends(auth.get_current_customer_data)
+):  
+    user_context.set(decoded_token.id)
     current_customer = customer_service.get_customer(session=session, customer_id=token_data.id)
     customer = customer_service.update_customer(session=session, current_customer=current_customer, customer_request=customer_request)
     return customer
 
 
-@router.delete("/{id}/", dependencies=[Depends(auth.role_required(["admin"]))])
+@router.delete("/{id}/")
 def delete_user(
     session: SessionDep, 
-    id: UUID
-) -> Message:
+    id: UUID, 
+    decoded_token: TokenData = Depends(auth.role_required(["admin"]))
+):
+    user_context.set(decoded_token.id)
     address_service.delete_addresses(session, id)
     customer_service.delete_customer(session, id)
     return Message(message="User deleted successfully")
@@ -85,8 +90,9 @@ def update_password(
     id: UUID, 
     password_request: PasswordRequest, 
     session: SessionDep, 
-    token_data: TokenData = Depends(auth.role_required(["admin", "user"]))
-) -> Message:
+    decoded_token: TokenData = Depends(auth.role_required(["admin", "user"]))
+):
+    user_context.set(decoded_token.id)
     current_customer = customer_service.get_customer(session=session, customer_id=token_data.id)
     customer_service.update_password(session, password_request, current_customer) 
     return Message(message="Password updated successfully")
@@ -96,10 +102,9 @@ async def login_for_access_token(
     session: SessionDep,
     form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
 ) -> Token:
-    
+    user_context.set(form_data.username)
     user = auth.authenticate_user(session, form_data)
     access_token_expires = timedelta(days=settings.ACCESS_TOKEN_EXPIRE_DAYS)
-
     access_token = auth.create_access_token(
         data={"sub": str(user.id), "name": user.name, "role": user.role}, 
         expires_delta=access_token_expires

@@ -1,27 +1,22 @@
-from app.models.customer import Customer
 from fastapi import Depends
 from app.schemas.customer import (
     LoginRequest, 
     TokenData, 
 )
 from app.services.customer import CustomerService
-from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
-from app.core.encrypt import encrypt_data, check_password
-from sqlmodel import Session, select
+from fastapi.security import OAuth2PasswordBearer
+from app.core.encrypt import check_password
+from sqlmodel import Session
 from app.exceptions import (
     InvalidPasswordException, 
-    InvalidTokenException, 
     UserNotFoundException, 
     UnauthorizedException,
 )
-from app.deps import SessionDep
-from http import HTTPStatus
 import jwt
 from jwt import InvalidTokenError
 from datetime import datetime, timezone, timedelta
 from app.core.settings import Settings
 from typing import List
-from app.context import user_id_context
 
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
@@ -62,7 +57,6 @@ def get_current_customer_data(token: str = Depends(oauth2_scheme)) -> TokenData:
         token_data = TokenData(id=customer_id, role=role)
     except InvalidTokenError:
         raise InvalidPasswordException
-    user_id_context.set(token_data.id)
     return token_data
     
 def role_required(roles: List[str]):

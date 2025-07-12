@@ -8,7 +8,6 @@ from http import HTTPStatus
 from .exceptions import AppException
 from app.customer_logging import logger
 from uuid import uuid4
-from app.context import user_id_context
 from app.middlewares import ClientIPMiddleware
 
 
@@ -19,7 +18,9 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=[
+        "https://moreofthis.vercel.app/"
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

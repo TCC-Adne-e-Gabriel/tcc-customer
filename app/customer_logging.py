@@ -1,7 +1,7 @@
 import logging
 import sys
 import logging
-from app.context import user_id_context, client_ip_context
+from app.context import user_context, client_ip_context
 
 AUDIT_LEVEL_NUM = 25
 logging.addLevelName(AUDIT_LEVEL_NUM, "AUDIT")
@@ -20,7 +20,7 @@ class ContextLoggerAdapter(logging.LoggerAdapter):
             self._log(AUDIT_LEVEL_NUM, msg, args, **kwargs)
             
     def process(self, msg, kwargs):
-        user_id = user_id_context.get()
+        user_id = user_context.get()
         client_ip = client_ip_context.get()
         extra = kwargs.get("extra", {})
         extra["user_id"] = user_id
