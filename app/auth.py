@@ -21,6 +21,7 @@ from jwt import InvalidTokenError
 from datetime import datetime, timezone, timedelta
 from app.core.settings import Settings
 from typing import List
+from app.context import user_id_context
 
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
@@ -61,6 +62,7 @@ def get_current_customer_data(token: str = Depends(oauth2_scheme)) -> TokenData:
         token_data = TokenData(id=customer_id, role=role)
     except InvalidTokenError:
         raise InvalidPasswordException
+    user_id_context.set(token_data.id)
     return token_data
     
 def role_required(roles: List[str]):

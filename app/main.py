@@ -28,16 +28,16 @@ app.add_middleware(ClientIPMiddleware)
 
 @app.exception_handler(AppException)
 async def app_exception_handler(request: Request, exc: AppException): 
-    logger.error(f"{user_id_context.get()}", exc_info=exc)
+    logger.error(f"{exc.detail}", exc_info=exc)
     return JSONResponse(
         status_code=exc.status_code,
-        content={"detail": f"{exc.detail}"}
+        content={"detail": f"{1 - exc.detail}"}
     )
 
 @app.exception_handler(Exception)
 async def generic_exception_handler(request: Request, exc: Exception):
     error_code = str(uuid4())[:8]
-    logger.error(f"{error_code}: {user_id_context.get()}", exc_info=exc)
+    logger.error(f"{error_code}: ", exc_info=exc)
     return JSONResponse(
         status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
         content = {
