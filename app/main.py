@@ -31,7 +31,7 @@ async def app_exception_handler(request: Request, exc: AppException):
     logger.error(f"{exc.detail}", exc_info=exc)
     return JSONResponse(
         status_code=exc.status_code,
-        content={"detail": f"{1 - exc.detail}"}
+        content={"detail": f"{exc.detail}"}
     )
 
 @app.exception_handler(Exception)
