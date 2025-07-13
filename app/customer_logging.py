@@ -11,7 +11,7 @@ class MaxLevelFilter(logging.Filter):
         self.max_level = max_level
 
     def filter(self, record):
-        return record.levelno <= self.max_level
+        return record.levelno < self.max_level
 
 class ContextLoggerAdapter(logging.LoggerAdapter):      
     def audit(self, msg, *args, **kwargs):
@@ -40,7 +40,7 @@ stdout_handler.setLevel(logging.INFO)
 
 stderr_handler = logging.StreamHandler(sys.stderr)
 stderr_handler.setFormatter(formatter)
-stderr_handler.setLevel(logging.WARN)
+stderr_handler.setLevel(logging.WARNING)
 
 
 logger = logging.getLogger("app")
