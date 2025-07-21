@@ -69,7 +69,7 @@ def update_customer(
     decoded_token: TokenData = Depends(auth.get_current_customer_data)
 ):  
     user_context.set(decoded_token.id)
-    current_customer = customer_service.get_customer(session=session, customer_id=token_data.id)
+    current_customer = customer_service.get_customer(session=session, customer_id=decoded_token.id)
     customer = customer_service.update_customer(session=session, current_customer=current_customer, customer_request=customer_request)
     return customer
 
@@ -85,7 +85,7 @@ def delete_user(
     customer_service.delete_customer(session, id)
     return Message(message="User deleted successfully")
 
-@router.patch("/password/{id}")
+@router.patch("/password/{id}/")
 def update_password(
     id: UUID, 
     password_request: PasswordRequest, 
@@ -93,7 +93,7 @@ def update_password(
     decoded_token: TokenData = Depends(auth.role_required(["admin", "user"]))
 ):
     user_context.set(decoded_token.id)
-    current_customer = customer_service.get_customer(session=session, customer_id=token_data.id)
+    current_customer = customer_service.get_customer(session=session, customer_id=decoded_token.id)
     customer_service.update_password(session, password_request, current_customer) 
     return Message(message="Password updated successfully")
 
